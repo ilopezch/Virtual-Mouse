@@ -1,4 +1,5 @@
-opencv-contrib-python==4.13.0.92
-opencv-python==4.13.0.92
-mediapipe==0.10.35
-PyAutoGUI==0.9.54
+mediapipe>=0.10.0
+opencv-python>=4.8.0
+numpy>=1.24.0
+evdev>=1.6.0
+screeninfo>=0.8.1
