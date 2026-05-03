@@ -10,6 +10,14 @@ This Python application enables control of the mouse cursor through hand gesture
 - **Gesture Actions**: Supports gestures for left-clicking, right-clicking, dragging, and scrolling using specific hand configurations.
 - **User Instructions**: Provides on-screen instructions for gesture controls and actions.
 
+## Gestures
+─────────────────────────────────────────
+  MOVE        Index finger up, others down  → cursor follows index tip
+  LEFT CLICK  Fist (all 5 fingers closed)   → left click (hold > 0.6s = drag)
+  RIGHT CLICK Pinky only up                 → right click (1.5s cooldown)
+  SCROLL      Index + Middle up             → move hand into top/bottom zone
+                                               to latch scroll direction; hold still to keep scrolling
+
 ## Result
 ![Screenshot 2024-06-19 183558](https://github.com/whitehatboy005/Virtual-Mouse/assets/147156726/5080f8f6-2234-47bf-9af8-a2f8b9196207)
 

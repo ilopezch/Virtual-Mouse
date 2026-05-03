@@ -26,7 +26,7 @@ SMOOTHENING         = 7      # cursor lag vs smoothness (higher = smoother/laggi
 CONFIRM_FRAMES      = 4      # frames gesture must be stable before firing
 DRAG_HOLD_SECS      = 0.6    # seconds to hold fist before drag starts
 RCLICK_COOLDOWN     = 1.5    # min seconds between right clicks
-SCROLL_INTERVAL     = 10     # frames between scroll ticks (higher = slower)
+SCROLL_INTERVAL     = 5     # frames between scroll ticks (higher = slower)
 FINGER_CLOSED_RATIO = 0.7    # tip/mcp ratio threshold for "finger closed" detection
 
 HAND_CONNECTIONS = frozenset([
@@ -188,6 +188,7 @@ def update(ui, raw, mapped, sw, sh, fh, st):
     # ── SCROLL UP: index + middle + ring up, pinky down (three fingers)
     scroll_up   = idx and mid and rng and not pnk
 
+#    print(f"idx={idx} mid={mid} rng={rng} pnk={pnk} fist={fist} scroll_up={scroll_up} scroll_down={scroll_down}", flush=True)
     if scroll_down or scroll_up:
         _set_label(st, "SCROLL", now)
 
