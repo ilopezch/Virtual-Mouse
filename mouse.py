@@ -190,7 +190,7 @@ def update(ui, raw, mapped, sw, sh, fh, st):
         _set_label(st, "SCROLL", now)
 
         fh_active = fh * (1 - 2 * FRAME_MARGIN)
-        y_in_zone = raw[0][1] - fh * FRAME_MARGIN   # use wrist (lm 0) — stable at all hand positions
+        y_in_zone = raw[8][1] - fh * FRAME_MARGIN   # use index fingertip (lm 8) — spans full frame height
         zone_pos  = y_in_zone / fh_active           # 0.0=top … 1.0=bottom
 
         # Clamp zone_pos so values outside active area still register
