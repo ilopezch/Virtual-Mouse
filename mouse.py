@@ -184,36 +184,26 @@ def update(ui, raw, mapped, sw, sh, fh, st):
     idx, mid, rng, pnk, fist = get_finger_states(raw)
 
     # ── SCROLL: index + middle up ─────────────────────────────────────────
-    # Once a direction is committed, it keeps scrolling at fixed speed
-    # until the gesture changes. No hand movement needed after locking in.
-    if idx and mid and not rng and not pnk:  # scroll: index + middle up
+    # Entry: raise index+middle. Direction is set by pinky:
+    #   pinky down (normal) → scroll DOWN
+    #   pinky up            → scroll UP
+    # Once set, scrolls continuously at fixed speed until gesture ends.
+    if idx and mid and not rng:
         _set_label(st, "SCROLL", now)
 
-        fh_active = fh * (1 - 2 * FRAME_MARGIN)
-        y_in_zone = raw[8][1] - fh * FRAME_MARGIN   # use index fingertip (lm 8) — spans full frame height
-        zone_pos  = y_in_zone / fh_active           # 0.0=top … 1.0=bottom
+        # Set direction on first frame of gesture
+        if st.scroll_dir == 0:
+            st.scroll_dir = 1 if pnk else -1
 
-        # Clamp zone_pos so values outside active area still register
-        zone_pos = max(0.0, min(zone_pos, 1.0))
-
-        # Latch direction when hand enters a zone; clear only in dead zone
-        if zone_pos < 0.30:
-            st.scroll_dir = 1
-        elif zone_pos > 0.60:       # widened from 0.70 — easier to reach bottom
-            st.scroll_dir = -1
-        else:
-            st.scroll_dir = 0   # dead zone resets direction
-
-        # Fire at fixed rate using the counter
-        if st.scroll_dir != 0:
-            st.scroll_counter += 1
-            if st.scroll_counter >= SCROLL_INTERVAL:
-                st.scroll_counter = 0
-                ui_scroll(ui, st.scroll_dir)
+        # Fire at fixed rate
+        st.scroll_counter += 1
+        if st.scroll_counter >= SCROLL_INTERVAL:
+            st.scroll_counter = 0
+            ui_scroll(ui, st.scroll_dir)
 
         return   # don't move cursor or process clicks in scroll mode
 
-    # Leaving scroll mode — reset everything
+    # Leaving scroll mode — reset
     st.scroll_counter = 0
     st.scroll_dir     = 0
 
@@ -334,8 +324,8 @@ def draw_hud(frame, st, now):
     # ── top-left instructions ──────────────────────────────────────────────
     lines = [
         "MOVE  : index finger up",
-        "SCROLL: index + middle up",
-        "  top zone=up, bottom=down, hold",
+        "SCROLL UP  : index+middle+pinky up",
+        "SCROLL DOWN: index+middle up only",
         "LClick: fist",
         "Drag  : hold fist > 0.6s",
         "RClick: pinky only up",
@@ -400,8 +390,7 @@ def main():
         fh, fw, _  = frame.shape
 
         result = det.detect(mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb))
-        scroll_mode = (st.label == "SCROLL")
-        draw_active_zone(frame, scroll_mode)
+        draw_active_zone(frame)
 
         if result.hand_landmarks:
             lms    = result.hand_landmarks[0]
