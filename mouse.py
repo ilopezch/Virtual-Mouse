@@ -6,7 +6,8 @@ Gestures
   MOVE        Index finger up, others down  → cursor follows index tip
   LEFT CLICK  Fist (all 5 fingers closed)   → left click (hold > 0.6s = drag)
   RIGHT CLICK Pinky only up                 → right click (1.5s cooldown)
-  SCROLL      Index + Middle up             → move hand up/down to scroll
+  SCROLL      Index + Middle up             → move hand into top/bottom zone
+                                               to latch scroll direction; hold still to keep scrolling
 
 Tuning constants are at the top — adjust to taste.
 """
@@ -161,8 +162,7 @@ class State:
         self.last_rclick        = 0.0
 
         # scroll
-        self.scroll_ref_y       = None
-        self.scroll_accum       = 0.0
+        self.scroll_counter     = 0
         self.scroll_dir         = 0
 
         # hud
@@ -172,44 +172,40 @@ class State:
 
 # ══ Main update ════════════════════════════════════════════════════════════════
 
-def update(ui, raw, mapped, sw, sh, st):
+def update(ui, raw, mapped, sw, sh, fh, st):
     now = time.time()
     idx, mid, rng, pnk, fist = get_finger_states(raw)
 
-    # ── SCROLL: index + middle up, ring + pinky down ───────────────────────
+    # ── SCROLL: index + middle up ─────────────────────────────────────────
+    # Once a direction is committed, it keeps scrolling at fixed speed
+    # until the gesture changes. No hand movement needed after locking in.
     if idx and mid and not rng and not pnk:
         _set_label(st, "SCROLL", now)
-        st.scroll_dir = 0
 
-        if st.scroll_ref_y is None:
-            st.scroll_ref_y   = raw[8][1]
-            st.scroll_accum   = 0.0
+        fh_active = fh * (1 - 2 * FRAME_MARGIN)
+        y_in_zone = raw[8][1] - fh * FRAME_MARGIN
+        zone_pos  = y_in_zone / fh_active           # 0.0=top … 1.0=bottom
 
-        # Accumulate per-frame movement. Fire a tick every time the
-        # accumulated displacement exceeds SCROLL_INTERVAL pixels.
-        # This makes scrolling continuous and proportional to speed.
-        delta = st.scroll_ref_y - raw[8][1]   # positive = hand moved up
-        st.scroll_ref_y = raw[8][1]            # update anchor every frame
-        st.scroll_accum += delta
-
-        st.scroll_dir = 0
-        if st.scroll_accum > SCROLL_INTERVAL:
-            ticks = int(st.scroll_accum / SCROLL_INTERVAL)
-            for _ in range(ticks):
-                ui_scroll(ui, 1)
-            st.scroll_accum -= ticks * SCROLL_INTERVAL
+        # Latch direction when hand enters a zone; clear only in dead zone
+        if zone_pos < 0.30:
             st.scroll_dir = 1
-        elif st.scroll_accum < -SCROLL_INTERVAL:
-            ticks = int(abs(st.scroll_accum) / SCROLL_INTERVAL)
-            for _ in range(ticks):
-                ui_scroll(ui, -1)
-            st.scroll_accum += ticks * SCROLL_INTERVAL
+        elif zone_pos > 0.70:
             st.scroll_dir = -1
+        else:
+            st.scroll_dir = 0   # dead zone resets direction
+
+        # Fire at fixed rate using the counter
+        if st.scroll_dir != 0:
+            st.scroll_counter += 1
+            if st.scroll_counter >= SCROLL_INTERVAL:
+                st.scroll_counter = 0
+                ui_scroll(ui, st.scroll_dir)
+
         return   # don't move cursor or process clicks in scroll mode
 
-    # Reset scroll anchor when leaving scroll mode
-    st.scroll_ref_y = None
-    st.scroll_dir   = 0
+    # Leaving scroll mode — reset everything
+    st.scroll_counter = 0
+    st.scroll_dir     = 0
 
     # ── MOVE: only index finger up ─────────────────────────────────────────
     if idx and not fist:  # move whenever index is up and hand is not a fist
@@ -295,7 +291,7 @@ def draw_landmarks(frame, landmarks):
                  (0,255,0), 2)
 
 
-def draw_active_zone(frame):
+def draw_active_zone(frame, scroll_mode=False):
     h, w = frame.shape[:2]
     x1, y1 = int(w*FRAME_MARGIN), int(h*FRAME_MARGIN)
     x2, y2 = int(w*(1-FRAME_MARGIN)), int(h*(1-FRAME_MARGIN))
@@ -303,12 +299,33 @@ def draw_active_zone(frame):
     cv2.putText(frame, "Active Zone", (x1+4, y1-8),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,0), 1)
 
+    if scroll_mode:
+        # Draw the three scroll zones on the right edge of the active area
+        zone_h  = y2 - y1
+        up_y    = y1 + int(zone_h * 0.30)
+        down_y  = y1 + int(zone_h * 0.70)
+        mid_x   = x2 + 8
+
+        # Up zone (top 30%) — blue
+        cv2.rectangle(frame, (x2+2, y1), (x2+18, up_y), (255,120,0), -1)
+        cv2.putText(frame, "▲", (x2+4, y1+18),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 2)
+
+        # Dead zone (middle 40%) — grey
+        cv2.rectangle(frame, (x2+2, up_y), (x2+18, down_y), (80,80,80), -1)
+
+        # Down zone (bottom 30%) — blue
+        cv2.rectangle(frame, (x2+2, down_y), (x2+18, y2), (255,120,0), -1)
+        cv2.putText(frame, "▼", (x2+4, y2-4),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 2)
+
 
 def draw_hud(frame, st, now):
     # ── top-left instructions ──────────────────────────────────────────────
     lines = [
         "MOVE  : index finger up",
-        "SCROLL: index + middle up, move hand",
+        "SCROLL: index + middle up",
+        "  top zone=up, bottom=down, hold",
         "LClick: fist",
         "Drag  : hold fist > 0.6s",
         "RClick: pinky only up",
@@ -373,14 +390,15 @@ def main():
         fh, fw, _  = frame.shape
 
         result = det.detect(mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb))
-        draw_active_zone(frame)
+        scroll_mode = (st.label == "SCROLL")
+        draw_active_zone(frame, scroll_mode)
 
         if result.hand_landmarks:
             lms    = result.hand_landmarks[0]
             draw_landmarks(frame, lms)
             raw    = lm_px(lms, fw, fh)
             mapped = map_screen(raw, sw, sh, fw, fh)
-            update(ui, raw, mapped, sw, sh, st)
+            update(ui, raw, mapped, sw, sh, fh, st)
 
         now = time.time()
         if st.label not in ("MOVE", "SCROLL") and now > st.label_until:
