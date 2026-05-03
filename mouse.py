@@ -185,14 +185,21 @@ def update(ui, raw, mapped, sw, sh, st):
             st.scroll_ref_y   = raw[8][1]
             st.scroll_counter = 0
 
+        # Continuous/relative scroll: delta from previous frame position,
+        # not from the original anchor. This way both directions work
+        # symmetrically regardless of where the hand started.
         delta = st.scroll_ref_y - raw[8][1]   # positive = hand moved up
+        st.scroll_ref_y = raw[8][1]            # update anchor every frame
+
         st.scroll_counter += 1
         if st.scroll_counter >= SCROLL_INTERVAL:
             st.scroll_counter = 0
-            if delta > 12:
+            if delta > 3:
                 ui_scroll(ui, 1);  st.scroll_dir =  1
-            elif delta < -12:
+            elif delta < -3:
                 ui_scroll(ui, -1); st.scroll_dir = -1
+            else:
+                st.scroll_dir = 0
         return   # don't move cursor or process clicks in scroll mode
 
     # Reset scroll anchor when leaving scroll mode
