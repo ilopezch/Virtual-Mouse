@@ -183,17 +183,16 @@ def update(ui, raw, mapped, sw, sh, fh, st):
     now = time.time()
     idx, mid, rng, pnk, fist = get_finger_states(raw)
 
-    # ── SCROLL: index + middle up ─────────────────────────────────────────
-    # Entry: raise index+middle. Direction is set by pinky:
-    #   pinky down (normal) → scroll DOWN
-    #   pinky up            → scroll UP
-    # Once set, scrolls continuously at fixed speed until gesture ends.
-    if idx and mid and not rng:
+    # ── SCROLL DOWN: index + middle up, ring + pinky down (peace sign ✌️)
+    scroll_down = idx and mid and not rng and not pnk
+    # ── SCROLL UP: index + middle + ring up, pinky down (three fingers)
+    scroll_up   = idx and mid and rng and not pnk
+
+    if scroll_down or scroll_up:
         _set_label(st, "SCROLL", now)
 
-        # Set direction on first frame of gesture
-        if st.scroll_dir == 0:
-            st.scroll_dir = 1 if pnk else -1
+        # Latch direction from gesture — overwrite each frame so switching works
+        st.scroll_dir = -1 if scroll_down else 1
 
         # Fire at fixed rate
         st.scroll_counter += 1
@@ -324,8 +323,8 @@ def draw_hud(frame, st, now):
     # ── top-left instructions ──────────────────────────────────────────────
     lines = [
         "MOVE  : index finger up",
-        "SCROLL UP  : index+middle+pinky up",
-        "SCROLL DOWN: index+middle up only",
+        "SCROLL DOWN: index+middle up (peace ✌)",
+        "SCROLL UP  : index+middle+ring up",
         "LClick: fist",
         "Drag  : hold fist > 0.6s",
         "RClick: pinky only up",
