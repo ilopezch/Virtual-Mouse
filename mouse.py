@@ -162,7 +162,7 @@ class State:
 
         # scroll
         self.scroll_ref_y       = None
-        self.scroll_counter     = 0
+        self.scroll_accum       = 0.0
         self.scroll_dir         = 0
 
         # hud
@@ -183,23 +183,28 @@ def update(ui, raw, mapped, sw, sh, st):
 
         if st.scroll_ref_y is None:
             st.scroll_ref_y   = raw[8][1]
-            st.scroll_counter = 0
+            st.scroll_accum   = 0.0
 
-        # Continuous/relative scroll: delta from previous frame position,
-        # not from the original anchor. This way both directions work
-        # symmetrically regardless of where the hand started.
+        # Accumulate per-frame movement. Fire a tick every time the
+        # accumulated displacement exceeds SCROLL_INTERVAL pixels.
+        # This makes scrolling continuous and proportional to speed.
         delta = st.scroll_ref_y - raw[8][1]   # positive = hand moved up
         st.scroll_ref_y = raw[8][1]            # update anchor every frame
+        st.scroll_accum += delta
 
-        st.scroll_counter += 1
-        if st.scroll_counter >= SCROLL_INTERVAL:
-            st.scroll_counter = 0
-            if delta > 3:
-                ui_scroll(ui, 1);  st.scroll_dir =  1
-            elif delta < -3:
-                ui_scroll(ui, -1); st.scroll_dir = -1
-            else:
-                st.scroll_dir = 0
+        st.scroll_dir = 0
+        if st.scroll_accum > SCROLL_INTERVAL:
+            ticks = int(st.scroll_accum / SCROLL_INTERVAL)
+            for _ in range(ticks):
+                ui_scroll(ui, 1)
+            st.scroll_accum -= ticks * SCROLL_INTERVAL
+            st.scroll_dir = 1
+        elif st.scroll_accum < -SCROLL_INTERVAL:
+            ticks = int(abs(st.scroll_accum) / SCROLL_INTERVAL)
+            for _ in range(ticks):
+                ui_scroll(ui, -1)
+            st.scroll_accum += ticks * SCROLL_INTERVAL
+            st.scroll_dir = -1
         return   # don't move cursor or process clicks in scroll mode
 
     # Reset scroll anchor when leaving scroll mode
