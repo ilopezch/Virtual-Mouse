@@ -104,22 +104,17 @@ def finger_up(c, tip, pip):
     return c[tip][1] < c[pip][1]
 
 
-def thumb_up(c):
-    """Thumb extended: tip is clearly to the side of the IP joint."""
-    return abs(c[4][0] - c[3][0]) > 20
-
-
 def get_finger_states(c):
     """
     Returns (index_up, middle_up, ring_up, pinky_up, fist).
-    fist = all four fingers AND thumb closed.
+    fist = all four fingers closed. Thumb intentionally ignored —
+    unreliable to detect and not needed for our gesture set.
     """
-    idx = finger_up(c, 8,  6)
-    mid = finger_up(c, 12, 10)
-    rng = finger_up(c, 16, 14)
-    pnk = finger_up(c, 20, 18)
-    thmb = thumb_up(c)
-    fist = not idx and not mid and not rng and not pnk and not thmb
+    idx  = finger_up(c, 8,  6)
+    mid  = finger_up(c, 12, 10)
+    rng  = finger_up(c, 16, 14)
+    pnk  = finger_up(c, 20, 18)
+    fist = not idx and not mid and not rng and not pnk
     return idx, mid, rng, pnk, fist
 
 
@@ -205,7 +200,7 @@ def update(ui, raw, mapped, sw, sh, st):
     st.scroll_dir   = 0
 
     # ── MOVE: only index finger up ─────────────────────────────────────────
-    if idx and not mid and not rng and not pnk and not fist:
+    if idx and not fist:  # move whenever index is up and hand is not a fist
         ix, iy = mapped[8]
         st.cx = int(st.cx + (ix - st.cx) / SMOOTHENING)
         st.cy = int(st.cy + (iy - st.cy) / SMOOTHENING)
@@ -251,7 +246,7 @@ def update(ui, raw, mapped, sw, sh, st):
         st.fist_start  = 0.0
 
     # ── RIGHT CLICK: pinky only up ─────────────────────────────────────────
-    pinky_only = pnk and not idx and not mid and not rng and not fist
+    pinky_only = pnk and not idx and not fist  # pinky up, index down
     if pinky_only:
         st.rclick_frames += 1
         if (st.rclick_frames >= CONFIRM_FRAMES
