@@ -18,7 +18,7 @@ This Python application enables control of the mouse cursor through hand gesture
 
 ## Clone the Repository
 ```bash
-git clone https://github.com/whitehatboy005/Virtual-Mouse
+git clone https://github.com/ilopezch/Virtual-Mouse
 cd Virtual-Mouse
 ```
 ## Install Dependencies

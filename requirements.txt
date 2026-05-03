@@ -1,4 +1,4 @@
-opencv-contrib-python==4.10.0.84
-opencv-python==4.10.0.84
-mediapipe==0.10.20
+opencv-contrib-python==4.13.0.92
+opencv-python==4.13.0.92
+mediapipe==0.10.35
 PyAutoGUI==0.9.54
