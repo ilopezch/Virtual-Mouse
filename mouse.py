@@ -100,21 +100,28 @@ def map_screen(coords, sw, sh, fw, fh):
 
 # ══ Finger state detection ═════════════════════════════════════════════════════
 
-def finger_up(c, tip, pip):
-    """True when fingertip is above its PIP joint — finger is extended."""
-    return c[tip][1] < c[pip][1]
+def finger_up(c, tip, mcp):
+    """
+    True when fingertip is clearly above its MCP knuckle.
+    Using MCP (not PIP) gives a much larger gap — reliable across
+    all hand heights and angles in the frame.
+      index:  tip=8,  mcp=5
+      middle: tip=12, mcp=9
+      ring:   tip=16, mcp=13
+      pinky:  tip=20, mcp=17
+    """
+    return c[tip][1] < c[mcp][1] - 15   # 15px margin avoids borderline reads
 
 
 def get_finger_states(c):
     """
     Returns (index_up, middle_up, ring_up, pinky_up, fist).
-    fist = all four fingers closed. Thumb intentionally ignored —
-    unreliable to detect and not needed for our gesture set.
+    fist = all four fingers closed.
     """
-    idx  = finger_up(c, 8,  6)
-    mid  = finger_up(c, 12, 10)
-    rng  = finger_up(c, 16, 14)
-    pnk  = finger_up(c, 20, 18)
+    idx  = finger_up(c, 8,  5)
+    mid  = finger_up(c, 12, 9)
+    rng  = finger_up(c, 16, 13)
+    pnk  = finger_up(c, 20, 17)
     fist = not idx and not mid and not rng and not pnk
     return idx, mid, rng, pnk, fist
 
