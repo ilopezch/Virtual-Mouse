@@ -179,17 +179,20 @@ def update(ui, raw, mapped, sw, sh, fh, st):
     # ── SCROLL: index + middle up ─────────────────────────────────────────
     # Once a direction is committed, it keeps scrolling at fixed speed
     # until the gesture changes. No hand movement needed after locking in.
-    if idx and mid and not rng and not pnk:
+    if mid and not rng and not pnk and not fist:  # middle up = scroll mode (index optional — may dip when hand is low)
         _set_label(st, "SCROLL", now)
 
         fh_active = fh * (1 - 2 * FRAME_MARGIN)
         y_in_zone = raw[8][1] - fh * FRAME_MARGIN
         zone_pos  = y_in_zone / fh_active           # 0.0=top … 1.0=bottom
 
+        # Clamp zone_pos so values outside active area still register
+        zone_pos = max(0.0, min(zone_pos, 1.0))
+
         # Latch direction when hand enters a zone; clear only in dead zone
         if zone_pos < 0.30:
             st.scroll_dir = 1
-        elif zone_pos > 0.70:
+        elif zone_pos > 0.60:       # widened from 0.70 — easier to reach bottom
             st.scroll_dir = -1
         else:
             st.scroll_dir = 0   # dead zone resets direction
@@ -208,7 +211,7 @@ def update(ui, raw, mapped, sw, sh, fh, st):
     st.scroll_dir     = 0
 
     # ── MOVE: only index finger up ─────────────────────────────────────────
-    if idx and not fist:  # move whenever index is up and hand is not a fist
+    if idx and not mid and not fist:  # move: index up, middle down (not scroll mode)
         ix, iy = mapped[8]
         st.cx = int(st.cx + (ix - st.cx) / SMOOTHENING)
         st.cy = int(st.cy + (iy - st.cy) / SMOOTHENING)
@@ -303,7 +306,7 @@ def draw_active_zone(frame, scroll_mode=False):
         # Draw the three scroll zones on the right edge of the active area
         zone_h  = y2 - y1
         up_y    = y1 + int(zone_h * 0.30)
-        down_y  = y1 + int(zone_h * 0.70)
+        down_y  = y1 + int(zone_h * 0.60)
         mid_x   = x2 + 8
 
         # Up zone (top 30%) — blue
