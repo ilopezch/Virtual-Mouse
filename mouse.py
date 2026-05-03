@@ -179,11 +179,11 @@ def update(ui, raw, mapped, sw, sh, fh, st):
     # ── SCROLL: index + middle up ─────────────────────────────────────────
     # Once a direction is committed, it keeps scrolling at fixed speed
     # until the gesture changes. No hand movement needed after locking in.
-    if mid and not rng and not pnk and not fist:  # middle up = scroll mode (index optional — may dip when hand is low)
+    if idx and mid and not rng and not pnk:  # scroll: index + middle up
         _set_label(st, "SCROLL", now)
 
         fh_active = fh * (1 - 2 * FRAME_MARGIN)
-        y_in_zone = raw[8][1] - fh * FRAME_MARGIN
+        y_in_zone = raw[0][1] - fh * FRAME_MARGIN   # use wrist (lm 0) — stable at all hand positions
         zone_pos  = y_in_zone / fh_active           # 0.0=top … 1.0=bottom
 
         # Clamp zone_pos so values outside active area still register
@@ -211,7 +211,7 @@ def update(ui, raw, mapped, sw, sh, fh, st):
     st.scroll_dir     = 0
 
     # ── MOVE: only index finger up ─────────────────────────────────────────
-    if idx and not mid and not fist:  # move: index up, middle down (not scroll mode)
+    if idx and not fist:  # move: index up, not a fist
         ix, iy = mapped[8]
         st.cx = int(st.cx + (ix - st.cx) / SMOOTHENING)
         st.cy = int(st.cy + (iy - st.cy) / SMOOTHENING)
