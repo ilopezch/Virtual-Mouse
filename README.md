@@ -11,15 +11,16 @@ This Python application enables control of the mouse cursor through hand gesture
 - **User Instructions**: Provides on-screen instructions for gesture controls and actions.
 
 ## Gestures
-─────────────────────────────────────────
-  MOVE        Index finger up, others down  → cursor follows index tip
-  LEFT CLICK  Fist (all 5 fingers closed)   → left click (hold > 0.6s = drag)
-  RIGHT CLICK Pinky only up                 → right click (1.5s cooldown)
-  SCROLL      Index + Middle up             → move hand into top/bottom zone
-                                               to latch scroll direction; hold still to keep scrolling
+|ACTION|GESTURE||DESCRIPTION|
+| :--- | :---: | :---: | ---:|
+| MOVE | Index finger up, others down | → | cursor follows index tip |
+| LEFT CLICK | Fist (all 5 fingers closed) | → | left click (hold > 0.6s = drag) |
+| RIGHT CLICK | Pinky only up | → | right click (1.5s cooldown) |
+| SCROLL UP | Index + Middle up | →  | hold still to keep scrolling up |
+| SCROLL DOWN | Ring + Index + Middle up | →  | hold still to keep scrolling down |
 
 ## Result
-![Screenshot 2024-06-19 183558](https://github.com/whitehatboy005/Virtual-Mouse/assets/147156726/5080f8f6-2234-47bf-9af8-a2f8b9196207)
+![Virtual-Mouse](https://github.com/user-attachments/assets/95b3c0bc-c22a-4cb8-984e-ffa0eda5d55e)
 
 
 ## ⚙️ Installation:
@@ -33,6 +34,19 @@ cd Virtual-Mouse
 ```bash
 pip install -r requirements.txt
 ```
+## Setup environment
+```bash
+echo 'KERNEL=="uinput", MODE="0660", GROUP="input"' | sudo tee /etc/udev/rules.d/99-uinput.rules
+
+# Reload udev
+sudo udevadm control --reload-rules
+sudo udevadm trigger
+```
+```bash
+# To make uinput load automatically on boot:
+echo 'uinput' | sudo tee /etc/modules-load.d/uinput.conf
+```
+
 ## Run the Program
 ```bash
 python mouse.py

@@ -6,8 +6,8 @@ Gestures
   MOVE        Index finger up, others down  → cursor follows index tip
   LEFT CLICK  Fist (all 5 fingers closed)   → left click (hold > 0.6s = drag)
   RIGHT CLICK Pinky only up                 → right click (1.5s cooldown)
-  SCROLL      Index + Middle up             → move hand into top/bottom zone
-                                               to latch scroll direction; hold still to keep scrolling
+  SCROLL UP   Index + Middle up             → hold still to keep scrolling
+  SCROLL DOWN Ring + Index + Middle up      → hold still to keep scrolling
 
 Tuning constants are at the top — adjust to taste.
 """
@@ -390,7 +390,7 @@ def main():
         fh, fw, _  = frame.shape
 
         result = det.detect(mp.Image(image_format=mp.ImageFormat.SRGB, data=rgb))
-        draw_active_zone(frame)
+#        draw_active_zone(frame)
 
         if result.hand_landmarks:
             lms    = result.hand_landmarks[0]
