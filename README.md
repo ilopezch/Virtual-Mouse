@@ -23,7 +23,7 @@ This Python application enables control of the mouse cursor through hand gesture
 ![Virtual-Mouse](https://github.com/user-attachments/assets/95b3c0bc-c22a-4cb8-984e-ffa0eda5d55e)
 
 
-## ⚙️ Installation:
+## ⚙️ Installation (Linux):
 
 ## Clone the Repository
 ```bash
@@ -51,5 +51,15 @@ echo 'uinput' | sudo tee /etc/modules-load.d/uinput.conf
 ```bash
 python mouse.py
 ```
+
+## ⚙️ Installation (Windows):
+```bash
+pip install mediapipe opencv-python numpy pyautogui 
+```
+## Run the Program
+```bash
+python mouse_windows.py
+```
+
 ## 📝 License
 This project is licensed under the terms of the [MIT license](LICENSE.md).
